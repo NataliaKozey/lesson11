@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  suitecrm:
+    image: nkorbach/suitecrm
+    platform: linux/amd64/v3
+    deploy:
+      # Number of replicas
+      replicas: 4
+    ports:
+      - '80:80'
+    environment:
+      ALLOW_EMPTY_PASSWORD: 'yes'
+      SUITECRM_DATABASE_USER: 'suitecrm'
+      SUITECRM_DATABASE_PASSWORD: 'ATPycLo9a08W'
+      SUITECRM_DATABASE_NAME: 'suitecrm'
+    volumes:
+      - ./custom:/var/www/html/custom
+      - ./upload:/var/www/html/upload
+      - suitecrm-db:/var/lib/mysql
+
+  mysql:
+    image: nkorbach/mysql_for_suitecrm
+    platform: linux/amd64/v3
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: 'ATPycLo9a08W'
+      MYSQL_DATABASE: 'suitecrm'
+      MYSQL_USER: 'suitecrm'
+      MYSQL_PASSWORD: 'ATPycLo9a08W'
+    volumes:
+      - suitecrm-db:/var/lib/mysql
+
+  visualizersvc:
+    # Image of docker-swarm-visualizer app
+    image: dockersamples/visualizer
+    # This service will run only when myjsapp has no failure
+    depends_on:
+      - suitecrm
+    deploy:
+      placement:
+        # We want to deploy this service only in manager node (suppose we have only one)
+        constraints:
+          - 'node.role==manager'
+    ports:
+      # Host port : container port
+      - '5000:8080'
+    volumes:
+      # Bind volumne host to container
+      - '/var/run/docker.sock:/var/run/docker.sock'
+volumes:
+  suitecrm-db:
+
+
+
